@@ -1,10 +1,7 @@
 'use client';
 
 // Important: These values are retrieved from environment variables.
-// If you encounter an 'invalid-api-key' error, ensure you have created
-// a .env file in the root of your project with the following keys:
-// NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, etc.
-
+// Ensure you have created a .env file in the root of your project with these keys.
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',

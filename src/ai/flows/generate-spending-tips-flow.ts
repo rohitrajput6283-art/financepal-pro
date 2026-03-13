@@ -56,18 +56,21 @@ const prompt = ai.definePrompt({
   name: 'generateSpendingTipsPrompt',
   input: {schema: GenerateSpendingTipsInputSchema},
   output: {schema: GenerateSpendingTipsOutputSchema},
-  prompt: "You are an AI financial assistant expert at providing personalized spending tips and insights. " +
-    "Analyze the provided income and expense entries to identify areas for improvement and help the user manage their finances more effectively. " +
-    "Provide a concise summary of their financial situation and a list of actionable spending tips.\n\n" +
-    "Income Entries:\n" +
-    "{{#each incomeEntries}}\n" +
-    "- {{description}}: ${{amount}}\n" +
-    "{{/each}}\n\n" +
-    "Expense Entries:\n" +
-    "{{#each expenseEntries}}\n" +
-    "- {{description}}: ${{amount}}\n" +
-    "{{/each}}\n\n" +
-    "Based on these entries, provide a summary and personalized tips to improve financial management.",
+  prompt: `You are an AI financial assistant expert at providing personalized spending tips and insights. 
+Analyze the provided income and expense entries to identify areas for improvement and help the user manage their finances more effectively. 
+Provide a concise summary of their financial situation and a list of actionable spending tips.
+
+Income Entries:
+{{#each incomeEntries}}
+- {{description}}: ₹{{amount}}
+{{/each}}
+
+Expense Entries:
+{{#each expenseEntries}}
+- {{description}}: ₹{{amount}}
+{{/each}}
+
+Based on these entries, provide a summary and personalized tips to improve financial management.`,
 });
 
 const generateSpendingTipsFlow = ai.defineFlow(
