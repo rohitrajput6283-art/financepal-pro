@@ -4,28 +4,27 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { IndianRupee } from 'lucide-react';
 
-export default function EMICalculator() {
-  const [principal, setPrincipal] = useState([500000]);
-  const [rate, setRate] = useState([8.5]);
-  const [tenure, setTenure] = useState([20]);
+export default function SIPCalculator() {
+  const [monthly, setMonthly] = useState([5000]);
+  const [rate, setRate] = useState([12]);
+  const [tenure, setTenure] = useState([10]);
 
   const calculations = useMemo(() => {
-    const P = principal[0];
-    const r = rate[0] / (12 * 100);
+    const P = monthly[0];
+    const i = rate[0] / (12 * 100);
     const n = tenure[0] * 12;
 
-    const emi = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
-    const totalPayment = emi * n;
-    const totalInterest = totalPayment - P;
+    const maturityValue = P * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+    const investedAmount = P * n;
+    const returns = maturityValue - investedAmount;
 
     return {
-      monthlyEMI: emi,
-      totalInterest,
-      totalPayment
+      maturityValue,
+      investedAmount,
+      returns
     };
-  }, [principal, rate, tenure]);
+  }, [monthly, rate, tenure]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
@@ -36,41 +35,41 @@ export default function EMICalculator() {
         <CardContent className="pt-6 space-y-8">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <Label className="text-muted-foreground font-medium">Loan Amount</Label>
-              <span className="text-primary font-bold">{formatCurrency(principal[0])}</span>
+              <Label className="text-muted-foreground font-medium">Monthly Investment</Label>
+              <span className="text-secondary font-bold">{formatCurrency(monthly[0])}</span>
             </div>
             <Slider 
-              value={principal} 
-              onValueChange={setPrincipal} 
-              max={10000000} 
-              step={10000} 
-              className="py-4"
+              value={monthly} 
+              onValueChange={setMonthly} 
+              max={100000} 
+              step={500} 
+              className="py-4 text-secondary"
             />
           </div>
 
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <Label className="text-muted-foreground font-medium">Interest Rate (p.a.)</Label>
-              <span className="text-primary font-bold">{rate[0]}%</span>
+              <Label className="text-muted-foreground font-medium">Expected Return Rate (p.a.)</Label>
+              <span className="text-secondary font-bold">{rate[0]}%</span>
             </div>
             <Slider 
               value={rate} 
               onValueChange={setRate} 
               max={30} 
-              step={0.1} 
+              step={0.5} 
               className="py-4"
             />
           </div>
 
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <Label className="text-muted-foreground font-medium">Loan Tenure (Years)</Label>
-              <span className="text-primary font-bold">{tenure[0]} yrs</span>
+              <Label className="text-muted-foreground font-medium">Time Period (Years)</Label>
+              <span className="text-secondary font-bold">{tenure[0]} yrs</span>
             </div>
             <Slider 
               value={tenure} 
               onValueChange={setTenure} 
-              max={30} 
+              max={40} 
               step={1} 
               className="py-4"
             />
@@ -79,30 +78,30 @@ export default function EMICalculator() {
       </Card>
 
       <div className="grid grid-cols-1 gap-4">
-        <Card className="bg-primary text-primary-foreground border-none">
+        <Card className="bg-secondary text-secondary-foreground border-none">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium opacity-80 uppercase tracking-wider">Monthly EMI</CardTitle>
+            <CardTitle className="text-sm font-medium opacity-80 uppercase tracking-wider">Estimated Returns</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{formatCurrency(calculations.monthlyEMI)}</div>
+            <div className="text-3xl font-bold">{formatCurrency(calculations.maturityValue)}</div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-2 gap-4">
           <Card className="border-none bg-white">
             <CardHeader className="pb-2">
-              <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Interest</CardTitle>
+              <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Invested Amount</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold text-secondary">{formatCurrency(calculations.totalInterest)}</div>
+              <div className="text-lg font-bold text-muted-foreground">{formatCurrency(calculations.investedAmount)}</div>
             </CardContent>
           </Card>
           <Card className="border-none bg-white">
             <CardHeader className="pb-2">
-              <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Payment</CardTitle>
+              <CardTitle className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Wealth Gained</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold text-primary">{formatCurrency(calculations.totalPayment)}</div>
+              <div className="text-lg font-bold text-secondary">{formatCurrency(calculations.returns)}</div>
             </CardContent>
           </Card>
         </div>
