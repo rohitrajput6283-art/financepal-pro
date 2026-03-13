@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "BudgetEntry": {
+      "title": "Budget Entry",
+      "description": "A single income or expense entry for a user.",
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of the entry."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the entry."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "income",
+            "expense"
+          ],
+          "description": "Type of entry."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the entry was created."
+        }
+      },
+      "required": [
+        "description",
+        "amount",
+        "type",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "/users/{userId}/budgetEntries": {
+      "schema": "#/entities/BudgetEntry",
+      "description": "User specific budget entries."
+    }
+  }
+}

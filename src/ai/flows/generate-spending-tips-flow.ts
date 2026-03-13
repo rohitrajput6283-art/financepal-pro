@@ -62,12 +62,12 @@ Provide a concise summary of their financial situation and a list of actionable 
 
 Income Entries:
 {{#each incomeEntries}}
-- {{description}}: ${{amount}}
+- {{description}}: \${{amount}}
 {{/each}}
 
 Expense Entries:
 {{#each expenseEntries}}
-- {{description}}: ${{amount}}
+- {{description}}: \${{amount}}
 {{/each}}
 
 Based on these entries, provide a summary and personalized tips to improve financial management.`,

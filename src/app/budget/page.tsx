@@ -1,51 +1,89 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Minus, Sparkles, Trash2, Wallet } from 'lucide-react';
+import { Plus, Minus, Sparkles, Trash2, Wallet, Loader2 } from 'lucide-react';
 import { generateSpendingTips, GenerateSpendingTipsOutput } from '@/ai/flows/generate-spending-tips-flow';
-import { Progress } from '@/components/ui/progress';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 interface Entry {
   id: string;
   description: string;
   amount: number;
   type: 'income' | 'expense';
-  date: Date;
+  createdAt: any;
 }
 
 export default function BudgetTracker() {
-  const [entries, setEntries] = useState<Entry[]>([]);
+  const { user, loading: userLoading } = useUser();
+  const firestore = useFirestore();
+  
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiTips, setAiTips] = useState<GenerateSpendingTipsOutput | null>(null);
 
+  const entriesQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'users', user.uid, 'budgetEntries'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: entries = [], loading: entriesLoading } = useCollection<Entry>(entriesQuery);
+
   const addEntry = (type: 'income' | 'expense') => {
-    if (!description || !amount) return;
-    const newEntry: Entry = {
-      id: Math.random().toString(36).substr(2, 9),
+    if (!description || !amount || !firestore || !user) return;
+    
+    const entryData = {
       description,
       amount: parseFloat(amount),
       type,
-      date: new Date(),
+      createdAt: serverTimestamp(),
     };
-    setEntries([newEntry, ...entries]);
+
+    const collectionRef = collection(firestore, 'users', user.uid, 'budgetEntries');
+    
+    addDoc(collectionRef, entryData)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: collectionRef.path,
+          operation: 'create',
+          requestResourceData: entryData,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
     setDescription('');
     setAmount('');
   };
 
   const removeEntry = (id: string) => {
-    setEntries(entries.filter(e => e.id !== id));
+    if (!firestore || !user) return;
+    const docRef = doc(firestore, 'users', user.uid, 'budgetEntries', id);
+    deleteDoc(docRef)
+      .catch(async (error) => {
+        const permissionError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'delete',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
-  const totals = entries.reduce((acc, entry) => {
-    if (entry.type === 'income') acc.income += entry.amount;
-    else acc.expense += entry.amount;
-    return acc;
-  }, { income: 0, expense: 0 });
+  const totals = useMemo(() => {
+    return entries.reduce((acc, entry) => {
+      if (entry.type === 'income') acc.income += entry.amount;
+      else acc.expense += entry.amount;
+      return acc;
+    }, { income: 0, expense: 0 });
+  }, [entries]);
 
   const balance = totals.income - totals.expense;
 
@@ -62,7 +100,7 @@ export default function BudgetTracker() {
       });
       setAiTips(result);
     } catch (error) {
-      console.error(error);
+      // Handled silently or globally
     } finally {
       setIsAiLoading(false);
     }
@@ -70,6 +108,31 @@ export default function BudgetTracker() {
 
   const format = (val: number) => 
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+
+  if (userLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="animate-spin text-primary" size={32} />
+        <p className="text-muted-foreground text-sm">Loading your finances...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Card className="border-none shadow-sm bg-white/50 backdrop-blur">
+        <CardContent className="pt-10 pb-10 text-center space-y-4">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+            <Wallet size={32} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-bold text-lg">Secure Budget Tracking</h3>
+            <p className="text-muted-foreground text-sm">Please sign in to track your income, expenses, and get AI-powered financial insights.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -127,7 +190,7 @@ export default function BudgetTracker() {
             disabled={entries.length === 0 || isAiLoading}
             onClick={handleAiTips}
           >
-            {isAiLoading ? 'Analyzing...' : <><Sparkles size={14} className="mr-1" /> Get AI Insights</>}
+            {isAiLoading ? <Loader2 className="mr-1 animate-spin" size={14} /> : <><Sparkles size={14} className="mr-1" /> Get AI Insights</>}
           </Button>
         </div>
 
@@ -153,7 +216,11 @@ export default function BudgetTracker() {
           </Card>
         )}
 
-        {entries.length === 0 ? (
+        {entriesLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="animate-spin text-muted-foreground opacity-50" />
+          </div>
+        ) : entries.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground text-sm italic">
             No entries yet. Start tracking your budget!
           </div>
@@ -167,7 +234,9 @@ export default function BudgetTracker() {
                   </div>
                   <div>
                     <p className="font-bold text-sm text-foreground">{entry.description}</p>
-                    <p className="text-[10px] text-muted-foreground">{entry.date.toLocaleDateString()}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {entry.createdAt?.toDate ? entry.createdAt.toDate().toLocaleDateString() : 'Saving...'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
