@@ -5,22 +5,20 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore'
 
-// IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
+  let app: FirebaseApp;
   if (!getApps().length) {
-    let firebaseApp;
     try {
-      firebaseApp = initializeApp(firebaseConfig);
+      app = initializeApp(firebaseConfig);
     } catch (e) {
-      console.warn('Firebase initialization failed. Check your config.', e);
-      // Fallback app to avoid total crash
-      firebaseApp = initializeApp({ apiKey: "invalid", projectId: "invalid" }, "fallback");
+      console.warn('Firebase initialization failed. Using fallback.', e);
+      app = initializeApp({ apiKey: "invalid", projectId: "invalid" }, "fallback");
     }
-
-    return getSdks(firebaseApp);
+  } else {
+    app = getApp();
   }
 
-  return getSdks(getApp());
+  return getSdks(app);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {

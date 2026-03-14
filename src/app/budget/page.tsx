@@ -31,7 +31,6 @@ export default function BudgetTracker() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiTips, setAiTips] = useState<GenerateSpendingTipsOutput | null>(null);
 
-  // Use 'transactions' collection to match backend.json and security rules
   const entriesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
@@ -135,7 +134,7 @@ export default function BudgetTracker() {
           </div>
           <div className="space-y-2">
             <h3 className="font-bold text-lg">Secure Wallet</h3>
-            <p className="text-muted-foreground text-sm">Please sign in using the top-right button to track your transactions and unlock AI insights.</p>
+            <p className="text-muted-foreground text-sm">Please sign in to track your transactions and unlock AI insights.</p>
           </div>
         </CardContent>
       </Card>
