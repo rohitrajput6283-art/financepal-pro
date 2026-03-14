@@ -20,7 +20,12 @@ export default function CurrencyConverter() {
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('INR');
   const [amount, setAmount] = useState('1');
-  const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Set the initial time only after hydration to avoid mismatch between server and client
+    setLastUpdated(new Date().toLocaleTimeString());
+  }, []);
 
   const fromCurrency = currencies.find(c => c.code === from)!;
   const toCurrency = currencies.find(c => c.code === to)!;
@@ -98,7 +103,7 @@ export default function CurrencyConverter() {
           <h2 className="text-4xl font-bold">{format(result, toCurrency)}</h2>
           <div className="pt-4 flex items-center justify-center space-x-1 opacity-70 text-[10px] uppercase font-bold tracking-widest">
             <RefreshCw size={10} className="animate-spin-slow" />
-            <span>Updated {lastUpdated.toLocaleTimeString()}</span>
+            <span>Updated {lastUpdated || '--:--:--'}</span>
           </div>
         </CardContent>
       </Card>
