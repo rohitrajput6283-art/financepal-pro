@@ -70,7 +70,7 @@ Expense Entries:
 - {{description}}: INR {{amount}}
 {{/each}}
 
-Based on these entries, provide a summary and personalized tips to improve financial management.`,
+Based on these entries, provide a summary and personalized tips to improve financial management. Keep it encouraging and practical.`,
 });
 
 const generateSpendingTipsFlow = ai.defineFlow(
