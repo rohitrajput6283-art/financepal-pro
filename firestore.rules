@@ -1,8 +1,91 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/budgetEntries/{entryId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+    /**
+     * FINANCEPAL PRO SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset implements a strict User-Ownership model. Access is primarily controlled 
+     * by the hierarchical path structure, ensuring that users can only interact with data 
+     * nested under their own unique identifier.
+     *
+     * DATA STRUCTURE:
+     * All application data is organized under a top-level /users/{userId} collection. 
+     * - /users/{userId}: The UserProfile document.
+     * - /users/{userId}/categories/{categoryId}: User-specific transaction categories.
+     * - /users/{userId}/transactions/{transactionId}: Individual financial entries.
+     *
+     * KEY SECURITY DECISIONS:
+     * - Path-Based Authorization: We rely on the {userId} wildcard in the path matching 
+     *   the request.auth.uid for the most performant and secure checks.
+     * - Relational Integrity: We enforce that internal document fields (like userId or id) 
+     *   remain consistent with the document's path to prevent data cross-linking.
+     * - Prototyping Flexibility: While authorization is strictly enforced, data types 
+     *   and non-relational fields are not validated to allow for rapid UI iteration.
+     * - Existence Verification: All update and delete operations require the document 
+     *   to exist and belong to the requester.
+     */
+
+    // --- Global Helper Functions ---
+
+    /** @description Checks if the user is authenticated with Firebase Auth. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks if the user is the owner of an existing document. Used for updates and deletes. */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the UserProfile document. Users can only manage their own profile.
+     * @path /users/{userId}
+     * @allow (get) If the user is authenticated and matches the {userId} path.
+     * @deny (update) If the user tries to change the document's 'id' field.
+     * @principle Self-creation and strict path-to-id consistency.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for transaction categories. Private to each user.
+       * @path /users/{userId}/categories/{categoryId}
+       * @allow (create) If request.auth.uid == userId and internal userId field matches path.
+       * @deny (list) If a user attempts to query categories belonging to a different userId.
+       * @principle Denormalized ownership for authorization independence.
+       */
+      match /categories/{categoryId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for financial transactions. Private to each user.
+       * @path /users/{userId}/transactions/{transactionId}
+       * @allow (list) If the path userId matches the auth uid, allowing for secure filtered queries.
+       * @deny (create) If the transaction data attempts to link to a different userId than the path.
+       * @principle Relational integrity and owner-only write access.
+       */
+      match /transactions/{transactionId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
     }
   }
 }

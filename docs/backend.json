@@ -1,49 +1,189 @@
 {
   "entities": {
-    "BudgetEntry": {
-      "title": "Budget Entry",
-      "description": "A single income or expense entry for a user.",
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
       "type": "object",
+      "description": "Represents an authenticated user within the FinancePal Pro application. This entity stores core user information required for personalization and linking other financial data.",
       "properties": {
-        "description": {
+        "id": {
           "type": "string",
-          "description": "Description of the entry."
+          "description": "Unique identifier for the UserProfile entity."
         },
-        "amount": {
-          "type": "number",
-          "description": "Amount of the entry."
-        },
-        "type": {
+        "email": {
           "type": "string",
-          "enum": [
-            "income",
-            "expense"
-          ],
-          "description": "Type of entry."
+          "description": "The email address of the user, primarily used for identification and communication.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's preferred display name."
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time",
-          "description": "When the entry was created."
+          "description": "Timestamp indicating when the user profile was initially created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the last time the user profile was updated.",
+          "format": "date-time"
         }
       },
       "required": [
-        "description",
+        "id",
+        "email",
+        "displayName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a classification tag for financial transactions, allowing users to organize their income and expenses.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Category). Identifies which user owns this category, enabling personalized budgeting."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., 'Groceries', 'Salary', 'Rent', 'Utilities')."
+        },
+        "type": {
+          "type": "string",
+          "description": "Specifies whether this category is for 'income' or 'expense' transactions."
+        },
+        "iconName": {
+          "type": "string",
+          "description": "Optional name or identifier for an icon associated with the category, used for UI representation."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "type"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a single financial entry (either an income or an expense) recorded by a user as part of their budget tracking.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Transaction entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Transaction). Links the transaction to its owning user."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The monetary value of the transaction. This value is always positive, with the 'type' field indicating if it's income or expense."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief textual description or memo providing details about the transaction."
+        },
+        "date": {
+          "type": "string",
+          "description": "The calendar date on which the transaction occurred.",
+          "format": "date"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the financial transaction, either 'income' or 'expense'."
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to Category. (Relationship: Category 1:N Transaction). Specifies the classification for this transaction."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
         "amount",
+        "description",
+        "date",
         "type",
-        "createdAt"
+        "categoryId"
       ]
     }
   },
   "auth": {
     "providers": [
-      "google.com"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
-    "/users/{userId}/budgetEntries": {
-      "schema": "#/entities/BudgetEntry",
-      "description": "User specific budget entries."
-    }
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores core profile information for each authenticated user. The `id` field within the document must match the `{userId}` path parameter, ensuring direct ownership. This enables simple, path-based security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, corresponding to `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Contains user-defined categories for financial transactions. Each document includes a `userId` field that must match the `{userId}` path parameter, denormalizing ownership for authorization independence and simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the owning user, corresponding to `request.auth.uid`."
+            },
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for a specific category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores individual financial transactions (income or expense) for each user. Each document includes a `userId` field that must match the `{userId}` path parameter, denormalizing ownership for authorization independence and simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the owning user, corresponding to `request.auth.uid`."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for a specific transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for FinancePal Pro prioritizes robust security, scalability, and debuggability by adhering strictly to the core design principles. All user-specific data is nested under a top-level `/users/{userId}` collection, where `{userId}` directly corresponds to the authenticated user's Firebase `uid` (`request.auth.uid`). This foundational approach simplifies security rules and eliminates cross-user data access issues.\n\n**Authorization Independence:** This structure achieves authorization independence by ensuring that all user-owned documents (UserProfile, Category, Transaction) explicitly contain a `userId` field that matches the `{userId}` wildcard in their respective paths. For example, a `Category` document at `/users/{userId}/categories/{categoryId}` will have its `userId` field set to the same `userId` as in the path. This denormalization means that security rules can evaluate access requests by simply comparing `request.auth.uid` with the `{userId}` wildcard in the path (or the `userId` field in the document), without needing to perform expensive and dependency-creating `get()` operations on parent documents. This allows for atomic writes and updates across user-owned collections.\n\n**QAPs (Rules are not Filters):** The structure inherently supports Query as a Principal (QAPs) by strictly segregating data per user. \n*   For `UserProfile`, a user can only read or write their own profile document located at `/users/{request.auth.uid}`. There is no `list` operation for user profiles other than the authenticated user's own.\n*   For `Category` and `Transaction` entities, a user can securely `list` their own data by querying their specific subcollections, i.e., `/users/{request.auth.uid}/categories` and `/users/{request.auth.uid}/transactions`. The security rules will be designed to only allow `list` operations where the path's `{userId}` wildcard matches `request.auth.uid`, ensuring that users can only retrieve data belonging to them. This prevents accidental data leakage and ensures that client-side queries are inherently secure without relying on post-query filtering."
   }
 }
