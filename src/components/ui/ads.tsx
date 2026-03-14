@@ -1,17 +1,31 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 interface AdBannerProps {
   position?: 'top' | 'bottom';
 }
 
 export function AdBanner({ position = 'top' }: AdBannerProps) {
+  useEffect(() => {
+    try {
+      // @ts-ignore
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (err) {
+      // Ads might be blocked or still loading
+      console.debug('AdMob: Ad could not be initialized yet.');
+    }
+  }, []);
+
   return (
-    <div className={`w-full bg-muted/30 flex items-center justify-center p-2 border-y ${position === 'top' ? 'mb-2' : 'mt-4'}`}>
-      <div className="bg-gray-200 w-full max-w-[320px] h-[50px] flex flex-col items-center justify-center rounded border border-dashed border-gray-400">
-        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Sponsored</span>
-        <span className="text-xs text-gray-500 font-medium italic">FinancePal Pro Ads</span>
+    <div className={`w-full flex items-center justify-center overflow-hidden ${position === 'top' ? 'mb-2 border-b' : 'mt-4 border-t'}`}>
+      <div className="w-full max-w-[320px] min-h-[50px] bg-muted/10 flex flex-col items-center justify-center">
+        <ins className="adsbygoogle"
+             style={{ display: 'block', textAlign: 'center' }}
+             data-ad-client="ca-pub-7905780957116984"
+             data-ad-slot="1206780897"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
       </div>
     </div>
   );
