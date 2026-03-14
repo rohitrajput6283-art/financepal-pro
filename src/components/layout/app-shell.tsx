@@ -1,14 +1,15 @@
 "use client";
 
 import React from 'react';
-import { BottomNav } from '@/components/navigation/bottom-nav';
-import { AdBanner } from '@/components/ui/ads';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser, useAuth } from '@/firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, User, Menu } from 'lucide-react';
+import { LogIn, LogOut, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { BottomNav } from '@/components/navigation/bottom-nav';
+import { AdBanner } from '@/components/ui/ads';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,13 +32,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       case '/gst': return 'GST Calculator';
       case '/budget': return 'Budget Tracker';
       case '/currency': return 'Currency Converter';
+      case '/login': return 'Welcome Back';
       default: return 'FinancePal Pro';
     }
-  };
-
-  const handleLogin = () => {
-    if (!auth) return;
-    signInWithPopup(auth, new GoogleAuthProvider());
   };
 
   const handleLogout = () => {
@@ -50,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {!isLoginPage && (
         <header className="px-6 py-4 bg-white border-b flex items-center justify-between z-30 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">F</div>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">F</div>
             <h1 className="text-lg font-bold text-foreground truncate max-w-[150px]">{getPageTitle()}</h1>
           </div>
           <div className="flex items-center space-x-2">
@@ -68,21 +65,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                        <p className="text-sm font-medium leading-none">{user.displayName || 'Financial Pro'}</p>
                         <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 focus:bg-red-50">
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 focus:bg-red-50 cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="outline" size="sm" onClick={handleLogin} className="text-primary border-primary/20 hover:bg-primary/5 h-9">
-                  <LogIn size={16} className="mr-2" />
-                  <span className="hidden sm:inline">Sign In</span>
+                <Button variant="outline" size="sm" asChild className="text-primary border-primary/20 hover:bg-primary/5 h-9 font-bold">
+                  <Link href="/login">
+                    <LogIn size={16} className="mr-2" />
+                    <span className="hidden sm:inline">Sign In</span>
+                  </Link>
                 </Button>
               )
             )}
@@ -92,7 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1 overflow-y-auto pb-24 scroll-smooth">
         {!isLoginPage && <AdBanner position="top" />}
-        <div className="p-4 space-y-4">
+        <div className={isLoginPage ? "h-full" : "p-4 space-y-4"}>
           {children}
         </div>
         {!isLoginPage && <AdBanner position="bottom" />}
