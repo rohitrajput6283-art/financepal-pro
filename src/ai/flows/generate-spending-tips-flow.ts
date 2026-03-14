@@ -62,12 +62,12 @@ Provide a concise summary of their financial situation and a list of actionable 
 
 Income Entries:
 {{#each incomeEntries}}
-- {{description}}: INR {{amount}}
+- {{{description}}}: INR {{{amount}}}
 {{/each}}
 
 Expense Entries:
 {{#each expenseEntries}}
-- {{description}}: INR {{amount}}
+- {{{description}}}: INR {{{amount}}}
 {{/each}}
 
 Based on these entries, provide a summary and personalized tips to improve financial management. Keep it encouraging and practical.`,
