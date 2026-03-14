@@ -20,7 +20,7 @@ export default function CurrencyConverter() {
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('INR');
   const [amount, setAmount] = useState('1');
-  const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     setLastUpdated(new Date().toLocaleTimeString());

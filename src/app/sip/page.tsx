@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -7,14 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function SIPCalculator() {
-  const [monthly, setMonthly] = useState(5000);
-  const [rate, setRate] = useState(12);
-  const [tenure, setTenure] = useState(10);
+  const [monthly, setMonthly] = useState<number | string>(5000);
+  const [rate, setRate] = useState<number | string>(12);
+  const [tenure, setTenure] = useState<number | string>(10);
 
   const calculations = useMemo(() => {
-    const P = monthly || 0;
-    const i = (rate || 0) / (12 * 100);
-    const n = (tenure || 0) * 12;
+    const P = Number(monthly) || 0;
+    const i = (Number(rate) || 0) / (12 * 100);
+    const n = (Number(tenure) || 0) * 12;
 
     if (P === 0 || i === 0 || n === 0) {
       return { maturityValue: 0, investedAmount: 0, returns: 0 };
@@ -43,7 +42,7 @@ export default function SIPCalculator() {
             <Input 
               type="number" 
               value={monthly} 
-              onChange={(e) => setMonthly(Number(e.target.value))}
+              onChange={(e) => setMonthly(e.target.value)}
               placeholder="Enter monthly amount"
               className="h-12 text-lg font-bold bg-muted/20 border-none focus-visible:ring-secondary"
             />
@@ -55,7 +54,7 @@ export default function SIPCalculator() {
               type="number" 
               step="0.5"
               value={rate} 
-              onChange={(e) => setRate(Number(e.target.value))}
+              onChange={(e) => setRate(e.target.value)}
               placeholder="Enter expected rate"
               className="h-12 text-lg font-bold bg-muted/20 border-none focus-visible:ring-secondary"
             />
@@ -66,7 +65,7 @@ export default function SIPCalculator() {
             <Input 
               type="number" 
               value={tenure} 
-              onChange={(e) => setTenure(Number(e.target.value))}
+              onChange={(e) => setTenure(e.target.value)}
               placeholder="Enter years"
               className="h-12 text-lg font-bold bg-muted/20 border-none focus-visible:ring-secondary"
             />
