@@ -2,20 +2,19 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
     let firebaseApp;
     try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
       firebaseApp = initializeApp(firebaseConfig);
+    } catch (e) {
+      console.warn('Firebase initialization failed. Check your config.', e);
+      // Fallback app to avoid total crash
+      firebaseApp = initializeApp({ apiKey: "invalid", projectId: "invalid" }, "fallback");
     }
 
     return getSdks(firebaseApp);
@@ -25,10 +24,25 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  let auth: Auth | null = null;
+  let firestore: Firestore | null = null;
+
+  try {
+    auth = getAuth(firebaseApp);
+  } catch (e) {
+    console.warn("Auth initialization failed", e);
+  }
+
+  try {
+    firestore = getFirestore(firebaseApp);
+  } catch (e) {
+    console.warn("Firestore initialization failed", e);
+  }
+
   return {
     firebaseApp,
-    auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    auth,
+    firestore
   };
 }
 

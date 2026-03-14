@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus, Sparkles, Trash2, Wallet, Loader2 } from 'lucide-react';
 import { generateSpendingTips, GenerateSpendingTipsOutput } from '@/ai/flows/generate-spending-tips-flow';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -28,7 +28,7 @@ export default function BudgetTracker() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiTips, setAiTips] = useState<GenerateSpendingTipsOutput | null>(null);
 
-  const entriesQuery = useMemo(() => {
+  const entriesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
       collection(firestore, 'users', user.uid, 'budgetEntries'),
@@ -36,7 +36,7 @@ export default function BudgetTracker() {
     );
   }, [firestore, user]);
 
-  const { data: entries = [], loading: entriesLoading } = useCollection<Entry>(entriesQuery);
+  const { data: entries = [], isLoading: entriesLoading } = useCollection<Entry>(entriesQuery);
 
   const addEntry = (type: 'income' | 'expense') => {
     if (!description || !amount || !firestore || !user) return;
@@ -78,7 +78,7 @@ export default function BudgetTracker() {
   };
 
   const totals = useMemo(() => {
-    return entries.reduce((acc, entry) => {
+    return (entries || []).reduce((acc, entry) => {
       if (entry.type === 'income') acc.income += entry.amount;
       else acc.expense += entry.amount;
       return acc;
@@ -88,7 +88,7 @@ export default function BudgetTracker() {
   const balance = totals.income - totals.expense;
 
   const handleAiTips = async () => {
-    if (entries.length === 0) return;
+    if (!entries || entries.length === 0) return;
     setIsAiLoading(true);
     try {
       const incomeEntries = entries.filter(e => e.type === 'income').map(e => ({ description: e.description, amount: e.amount }));
@@ -100,7 +100,7 @@ export default function BudgetTracker() {
       });
       setAiTips(result);
     } catch (error) {
-      // Handled silently or globally
+      console.error("AI Insights failed", error);
     } finally {
       setIsAiLoading(false);
     }
@@ -113,7 +113,7 @@ export default function BudgetTracker() {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <Loader2 className="animate-spin text-primary" size={32} />
-        <p className="text-muted-foreground text-sm">Loading your finances...</p>
+        <p className="text-muted-foreground text-sm">Loading your account...</p>
       </div>
     );
   }
@@ -187,7 +187,7 @@ export default function BudgetTracker() {
             variant="ghost" 
             size="sm" 
             className="text-primary text-xs font-bold"
-            disabled={entries.length === 0 || isAiLoading}
+            disabled={!entries || entries.length === 0 || isAiLoading}
             onClick={handleAiTips}
           >
             {isAiLoading ? <Loader2 className="mr-1 animate-spin" size={14} /> : <><Sparkles size={14} className="mr-1" /> Get AI Insights</>}
@@ -220,7 +220,7 @@ export default function BudgetTracker() {
           <div className="flex justify-center py-10">
             <Loader2 className="animate-spin text-muted-foreground opacity-50" />
           </div>
-        ) : entries.length === 0 ? (
+        ) : !entries || entries.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground text-sm italic">
             No entries yet. Start tracking your budget!
           </div>
