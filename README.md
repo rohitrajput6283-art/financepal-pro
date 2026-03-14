@@ -13,7 +13,7 @@ A modern financial companion built with Next.js 15, Firebase, and AI-powered ins
 ## Deployment Instructions
 
 ### 1. Push to GitHub
-If you haven't already, you can push this project to GitHub using these commands in your terminal:
+Run these commands in your terminal to push the project to your account:
 
 ```bash
 # Initialize the repository
@@ -26,10 +26,10 @@ git add .
 git commit -m "Initial commit of FinancePal Pro"
 
 # Link to your new GitHub repository
-# Replace <URL> with your actual repository URL (e.g., https://github.com/user/finance-pal.git)
-git remote add origin <URL>
+git remote add origin https://github.com/rohitrajput6283-art/finance-pal-pro.git
 
 # Push the code
+git branch -M main
 git push -u origin main
 ```
 
